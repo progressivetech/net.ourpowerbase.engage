@@ -79,7 +79,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $this->second_call_response . ' AS second_call_response,' . 
       $this->reminder_date . ' AS reminder_date,' . 
       $this->reminder_response . ' AS reminder_response,' . 
-      'staff_responsible AS organizer ' . 
+      'staff_responsible AS organizer, status_id ' . 
       "FROM civicrm_event e JOIN civicrm_participant p ON e.id = p.event_id ".
       "JOIN `$participant_info_table` pi ON p.id = pi.entity_id ".
       "JOIN civicrm_contact c ON c.id = p.contact_id ".
@@ -130,19 +130,40 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     }
     return $dates;
   }
-  function getCallsCount($organizer = NULL, $date = NULL) {
-    $fields = array('invitation_date', 'second_call_date', 'reminder_date');
+
+  /**
+   * Return count of calls made.
+   *
+   * @organizer String Limit to count made by organizer
+   * @date Date Limit to count made on given date
+   * @contacted Bolean Limit to responses that indicate the organizer
+   *  spoke to someone
+   */
+  function getCallsCount($organizer = NULL, $date = NULL, $contacted = FALSE) {
+    $fields = array(
+      'invitation_response' => 'invitation_date',
+      'second_call_response' => 'second_call_date',
+      'reminder_response' => 'reminder_date'
+    );
     $count = 0;
-    while(list(,$field) = each($fields)) {
-      $sql = "SELECT COUNT(`$field`) AS count FROM `" . $this->data_table . "` WHERE `$field` IS NOT NULL";
+    while(list($response_field,$date_field) = each($fields)) {
+      $sql = "SELECT COUNT(`$date_field`) AS count FROM `" . $this->data_table . "` WHERE `$date_field` IS NOT NULL";
       $params = array();
       if($organizer) {
         $sql .= " AND organizer = %0";
         $params[0] = array($organizer, 'String');
       }
       if($date) {
-        $sql .= " AND `$field` = %1";
+        $sql .= " AND `$date_field` = %1";
         $params[1] = array($date, 'String');
+      }
+      if($contacted) {
+        $responses_fragment = '';
+        $responses = $this->getContactedResponses();
+        while(list(,$response) = each($responses)) {
+          $responses_fragment[] = '"' . CRM_Core_DAO::escapeString($response) . '"';
+        }
+        $sql .= " AND `$response_field` IN (" . implode(',', $responses_fragment) . ')';
       }
       $dao = CRM_Core_DAO::executeQuery($sql, $params);
       while($dao->fetch()) {
@@ -164,7 +185,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE ";
     $sql .= "(";
 
-    $sql .= "(reminder_response = '' AND second_call_response = '' AND invitation_response = %0";
+    $sql .= "(second_call_response = '' AND invitation_response = %0";
     if($date) {
       $sql .= " AND invitation_date = %2";
     }
@@ -172,20 +193,11 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
 
     $sql .= " OR ";
 
-    $sql .= "(reminder_response = '' AND second_call_response  = %0";
+    $sql .= "(second_call_response  = %0";
     if($date) {
       $sql .= " AND second_call_date = %2";
     }
     $sql .= ') ';
-
-    $sql .= ' OR ';
-
-    $sql .= "(reminder_response = %0 ";
-    if($date) {
-      $sql .= " AND reminder_date = %2";
-    }
-    $sql .= ')'; 
-
     $sql .= ')';
 
     if($organizer) {
@@ -196,6 +208,19 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     return $dao->count;
   }
   
+  function getAttended($organizer = NULL) {
+    $params = array();
+    $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE ";
+    $sql .= "status_id = 2";
+    if($organizer) {
+      $sql .= " AND organizer = %0";
+      $params[0] = array($organizer, 'String');
+    }
+    $dao = CRM_Core_DAO::executeQuery($sql,$params);
+    $dao->fetch();
+    return $dao->count;
+  }
+
   function getRemindersTotal($answer, $organizer = NULL) {
     $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE 
       reminder_response = %0";
@@ -209,12 +234,19 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     return $dao->count;
   }
 
+  function getContactedResponses() {
+    // Should be a lookup...
+    return array('Y', 'N', 'Maybe');
+  }
+
   function setSummary($template) {
     $universe_count = $this->getUniverseCount();
     $days = $this->getDays();
     $days_count = count($days);
     $calls_count = $this->getCallsCount();
     $calls_per_day = number_format($calls_count / $days_count, 2);
+    $contacted_count = $this->getCallsCount(NULL, NULL, TRUE);
+    $contacted_per_day = number_format($contacted_count / $days_count, 2);
     $calculated_yes = $this->getCalculatedTotal('Y'); 
     $percent_yes = number_format($calculated_yes / $universe_count, 2) * 100 . '%'; 
     $calculated_no = $this->getCalculatedTotal('N'); 
@@ -227,11 +259,22 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     $percent_reminders_no = number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
     $reminders_maybe = $this->getRemindersTotal('Maybe'); 
     $percent_reminders_maybe = number_format($reminders_maybe / $calculated_maybe, 2) * 100 . '%'; 
+    $attended_total = $this->getAttended();
+    if(empty($reminders_yes)) {
+      $attended_percent = '-';
+    }
+    else {
+      $attended_percent = number_format($attended_total / $reminders_yes, 2) * 100 . '%';
+    }
 
     $template->assign('universe_count', $universe_count);
     $template->assign('days_count', $days_count);
     $template->assign('calls_count', $calls_count);
+    $template->assign('contacted_count', $contacted_count);
+    $template->assign('contacted_per_day', $contacted_per_day);
     $template->assign('calls_per_day', $calls_per_day);
+    $template->assign('attended_total', $attended_total);
+    $template->assign('attended_percent', $attended_percent);
 
     $summaryResponses = array(
       0 => array('Yes', $calculated_yes, $percent_yes, $reminders_yes, $percent_reminders_yes), 
@@ -252,7 +295,9 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $days = $this->getDays($organizer);
       $days_count = count($days);
       $calls_count = $this->getCallsCount($organizer);
+      $contacted_count = $this->getCallsCount($organizer, NULL, TRUE);
       $calls_per_day = empty($days_count) ? '0' : number_format($calls_count / $days_count, 2);
+      $contacted_per_day = empty($days_count) ? '0' : number_format($contacted_count / $days_count, 2);
       $calculated_yes = $this->getCalculatedTotal('Y', $organizer); 
       $percent_yes = empty($universe_count) ? '0%' : number_format($calculated_yes / $universe_count, 2) * 100 . '%'; 
       $calculated_no = $this->getCalculatedTotal('N', $organizer); 
@@ -265,12 +310,15 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $percent_reminders_no = empty($reminders_no) ? '0%' : number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
       $reminders_maybe = $this->getRemindersTotal('Maybe', $organizer); 
       $percent_reminders_maybe = empty($calculated_maybe) ? '0%' : number_format($reminders_maybe / $calculated_maybe, 2) * 100 . '%'; 
+      $attended_total = $this->getAttended($organizer); 
+      $percent_attended = empty($reminders_yes) ? '0%' : number_format($attended_total / $reminders_yes, 2) * 100 . '%'; 
 
       $resp[] = array(
-        $organizer, $universe_count, $calls_count, $days_count,
-        $calls_per_day, "${calculated_yes} (${percent_yes})",
+        $organizer, $universe_count, $calls_count, $contacted_count, $days_count,
+        $calls_per_day, $contacted_per_day, "${calculated_yes} (${percent_yes})",
         "${calculated_maybe} (${percent_maybe})", "$calculated_no (${percent_no})",
-        "${reminders_yes} (${percent_reminders_yes})", "${reminders_maybe} (${percent_reminders_maybe})"
+        "${reminders_yes} (${percent_reminders_yes})", "${reminders_maybe} (${percent_reminders_maybe})",
+        "${reminders_no} (${percent_reminders_no})", "${attended_total} (${percent_attended})"
       );
     }
     $template->assign('summaryResponsesByOrganizer', $resp);
@@ -288,6 +336,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       while(list(, $organizer) = each($this->organizers)) {
         $universe = $this->getUniverseCount($organizer);
         $calls = $this->getCallsCount($organizer, $day);
+        $contacts = $this->getCallsCount($organizer, $day, TRUE);
         // Don't include rows where the person made no calls.
         if($calls == 0) continue;
         $yes = $this->getCalculatedTotal('Y', $organizer, $day);
@@ -295,9 +344,10 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
         $maybe = $this->getCalculatedTotal('Maybe', $organizer, $day);
         $reminders_maybe = $this->getRemindersTotal('Maybe', $organizer, $day);
         $no = $this->getCalculatedTotal('N', $organizer, $day);
+        $reminders_no = $this->getRemindersTotal('No', $organizer, $day);
 
-        $resp[$day]['organizers'][$organizer] = array($organizer, $universe, $calls,
-          "${yes} (${reminders_yes})", "${maybe} (${reminders_maybe})", $no);
+        $resp[$day]['organizers'][$organizer] = array($organizer, $universe, $calls, $contacts,
+          "${yes} (${reminders_yes})", "${maybe} (${reminders_maybe})", "${no} (${reminders_no})");
       }
     }
     $template->assign('summaryResponsesByDay', $resp);
