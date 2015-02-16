@@ -265,28 +265,23 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     $days = $this->getDays();
     $days_count = count($days);
     $calls_count = $this->getCallsCount();
-    $calls_per_day = number_format($calls_count / $days_count, 2);
+    $calls_per_day = $days_count == 0 ? 0 : number_format($calls_count / $days_count, 2);
     $contacted_count = $this->getCallsCount(NULL, NULL, TRUE);
-    $contacted_per_day = number_format($contacted_count / $days_count, 2);
+    $contacted_per_day = $days_count == 0 ? 0 : number_format($contacted_count / $days_count, 2);
     $calculated_yes = $this->getCalculatedTotal('Y'); 
-    $percent_yes = number_format($calculated_yes / $universe_count, 2) * 100 . '%'; 
+    $percent_yes = $universe_count == 0 ? 0 : number_format($calculated_yes / $universe_count, 2) * 100 . '%'; 
     $calculated_no = $this->getCalculatedTotal('N'); 
-    $percent_no = number_format($calculated_no / $universe_count, 2) * 100 . '%'; 
+    $percent_no = $universe_count == 0 ? 0 : number_format($calculated_no / $universe_count, 2) * 100 . '%'; 
     $calculated_maybe = $this->getCalculatedTotal('Maybe'); 
-    $percent_maybe = number_format($calculated_maybe / $universe_count, 2) * 100 . '%'; 
+    $percent_maybe = $universe_count == 0 ? 0 : number_format($calculated_maybe / $universe_count, 2) * 100 . '%'; 
     $reminders_yes = $this->getRemindersTotal('Y'); 
-    $percent_reminders_yes = number_format($reminders_yes / $calculated_yes, 2) * 100 . '%'; 
+    $percent_reminders_yes = $calculated_yes == 0 ? 0 : number_format($reminders_yes / $calculated_yes, 2) * 100 . '%'; 
     $reminders_no = $this->getRemindersTotal('N'); 
-    $percent_reminders_no = number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
+    $percent_reminders_no = $calculated_no == 0 ? 0 : number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
     $reminders_maybe = $this->getRemindersTotal('Maybe'); 
-    $percent_reminders_maybe = number_format($reminders_maybe / $calculated_maybe, 2) * 100 . '%'; 
+    $percent_reminders_maybe = $calculated_maybe == 0 ? 0 : number_format($reminders_maybe / $calculated_maybe, 2) * 100 . '%'; 
     $attended_total = $this->getAttended();
-    if(empty($reminders_yes)) {
-      $attended_percent = '-';
-    }
-    else {
-      $attended_percent = number_format($attended_total / $reminders_yes, 2) * 100 . '%';
-    }
+    $attended_percent = $reminders_yes == 0 ? 0 : number_format($attended_total / $reminders_yes, 2) * 100 . '%';
 
     $template->assign('universe_count', $universe_count);
     $template->assign('days_count', $days_count);
@@ -328,7 +323,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $reminders_yes = $this->getRemindersTotal('Y', $organizer); 
       $percent_reminders_yes = empty($calculated_yes) ? '0%' : number_format($reminders_yes / $calculated_yes, 2) * 100 . '%'; 
       $reminders_no = $this->getRemindersTotal('N', $organizer); 
-      $percent_reminders_no = empty($reminders_no) ? '0%' : number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
+      $percent_reminders_no = empty($calculated_no) ? '0%' : number_format($reminders_no / $calculated_no, 2) * 100 . '%'; 
       $reminders_maybe = $this->getRemindersTotal('Maybe', $organizer); 
       $percent_reminders_maybe = empty($calculated_maybe) ? '0%' : number_format($reminders_maybe / $calculated_maybe, 2) * 100 . '%'; 
       $attended_total = $this->getAttended($organizer); 
