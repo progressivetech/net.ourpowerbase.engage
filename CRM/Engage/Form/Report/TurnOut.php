@@ -92,11 +92,32 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
 
   }
   function setOrganizers() {
+    // Get custom field for staff_responsible
+    $sql = "SELECT id FROM civicrm_custom_field WHERE (name = 'staff_responsible' OR 
+      (name IS NULL AND column_name like 'staff_responsible%')) AND is_active = 1 ";
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    $dao->fetch();
+    $organizer_map = array();
+    if(!empty($dao->id)) {
+      $params = array('field' => 'custom_' . $dao->id);
+      $result = civicrm_api3('CustomField', 'getoptions', $params);
+      if(array_key_exists('values', $result)) {
+        reset($result['values']);
+        while(list($key, $value) = each($result['values'])) {
+          $organizer_map[$key] = $value;
+        }
+      }
+    }
     $sql = "SELECT DISTINCT organizer FROM `" . $this->data_table . "`";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $this->organizers = array();
     while($dao->fetch()) {
-      $this->organizers[] = $dao->organizer;
+      if(array_key_exists($dao->organizer, $organizer_map)) {
+        $this->organizers[$dao->organizer] = $organizer_map[$dao->organizer];
+      }
+      else {
+        $this->organizers[$dao->organizer] = $dao->organizer;
+      }
     }
   }
 
@@ -290,7 +311,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     $this->setOrganizers();
     $resp = array();
     reset($this->organizers);
-    while(list(, $organizer) = each($this->organizers)) {
+    while(list($organizer, $organizer_friendly) = each($this->organizers)) {
       $universe_count = $this->getUniverseCount($organizer);
       $days = $this->getDays($organizer);
       $days_count = count($days);
@@ -314,7 +335,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $percent_attended = empty($reminders_yes) ? '0%' : number_format($attended_total / $reminders_yes, 2) * 100 . '%'; 
 
       $resp[] = array(
-        $organizer, $universe_count, $calls_count, $contacted_count, $days_count,
+        $organizer_friendly, $universe_count, $calls_count, $contacted_count, $days_count,
         $calls_per_day, $contacted_per_day, "${calculated_yes} (${percent_yes})",
         "${calculated_maybe} (${percent_maybe})", "$calculated_no (${percent_no})",
         "${reminders_yes} (${percent_reminders_yes})", "${reminders_maybe} (${percent_reminders_maybe})",
@@ -333,7 +354,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       );
       reset($this->organizers);
       $resp[$day]['organizers'] = array();
-      while(list(, $organizer) = each($this->organizers)) {
+      while(list($organizer, $organizer_label) = each($this->organizers)) {
         $universe = $this->getUniverseCount($organizer);
         $calls = $this->getCallsCount($organizer, $day);
         $contacts = $this->getCallsCount($organizer, $day, TRUE);
@@ -346,7 +367,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
         $no = $this->getCalculatedTotal('N', $organizer, $day);
         $reminders_no = $this->getRemindersTotal('No', $organizer, $day);
 
-        $resp[$day]['organizers'][$organizer] = array($organizer, $universe, $calls, $contacts,
+        $resp[$day]['organizers'][$organizer] = array($organizer_label, $universe, $calls, $contacts,
           "${yes} (${reminders_yes})", "${maybe} (${reminders_maybe})", "${no} (${reminders_no})");
       }
     }
