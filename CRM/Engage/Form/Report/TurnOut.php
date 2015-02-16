@@ -134,7 +134,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
         }
       }
     }
-    $sql = "SELECT DISTINCT organizer FROM `" . $this->data_table . "`";
+    $sql = "SELECT DISTINCT organizer FROM `" . $this->data_table . "` ORDER BY organizer";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $this->organizers = array();
     while($dao->fetch()) {
@@ -147,26 +147,38 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     }
   }
 
-  function getUniverseCount($organizer = NULL) {
+  // Note: $organizer might be null or empty
+  function getUniverseCount($organizer = FALSE) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "`";
     $params = array();
-    if($organizer) {
-      $sql .= " WHERE organizer = %0";
-      $params[0] = array($organizer, 'String');
+    if($organizer !== FALSE) {
+      if(empty($organizer)) {
+        $sql .= "WHERE organizer IS NULL OR organizer = ''";
+      }
+      else{
+        $sql .= " WHERE organizer = %0";
+        $params[0] = array($organizer, 'String');
+      }
     }
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     return $dao->count;
   }
-  function getDays($organizer = NULL) {
+
+  function getDays($organizer = FALSE) {
     $fields = array('invitation_date', 'second_call_date', 'reminder_date');
     $dates = array();
     while(list(,$field) = each($fields)) {
       $sql = "SELECT DISTINCT `$field` AS date FROM `" . $this->data_table . "` WHERE `$field` IS NOT NULL";
       $params = array();
-      if($organizer) {
-        $sql .= " AND organizer = %0";
-        $params[0] = array($organizer, 'String');
+      if($organizer !== FALSE) {
+        if(empty($organizer)) {
+          $sql .= " AND (organizer IS NULL OR organizer = '')";
+        }
+        else {
+          $sql .= " AND organizer = %0";
+          $params[0] = array($organizer, 'String');
+        }
       }
       $dao = CRM_Core_DAO::executeQuery($sql, $params);
       while($dao->fetch()) {
@@ -186,7 +198,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
    * @contacted Bolean Limit to responses that indicate the organizer
    *  spoke to someone
    */
-  function getCallsCount($organizer = NULL, $date = NULL, $contacted = FALSE) {
+  function getCallsCount($organizer = FALSE, $date = NULL, $contacted = FALSE) {
     $fields = array(
       'invitation_response' => 'invitation_date',
       'second_call_response' => 'second_call_date',
@@ -196,9 +208,14 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     while(list($response_field,$date_field) = each($fields)) {
       $sql = "SELECT COUNT(`$date_field`) AS count FROM `" . $this->data_table . "` WHERE `$date_field` IS NOT NULL";
       $params = array();
-      if($organizer) {
-        $sql .= " AND organizer = %0";
-        $params[0] = array($organizer, 'String');
+      if($organizer !== FALSE) {
+        if(empty($organizer)) {
+          $sql .= " AND (organizer IS NULL OR organizer = '')";
+        }
+        else {
+          $sql .= " AND organizer = %0";
+          $params[0] = array($organizer, 'String');
+        }
       }
       if($date) {
         $sql .= " AND `$date_field` = %1";
@@ -220,7 +237,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     return $count;
   }
 
-  function getCalculatedTotal($answer, $organizer = NULL, $date = NULL) {
+  function getCalculatedTotal($answer, $organizer = FALSE, $date = NULL) {
     $params = array(0 => array($answer, 'String'));
     if($organizer) {
       $params[1] = array($organizer, 'String');
@@ -246,36 +263,52 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     }
     $sql .= ') ';
     $sql .= ')';
-
-    if($organizer) {
-      $sql .= " AND organizer = %1";
+    if($organizer !== FALSE) {
+      if(empty($organizer)) {
+        $sql .= " AND (organizer IS NULL OR organizer = '')";
+      }
+      else {
+        $sql .= " AND organizer = %1";
+        $params[0] = array($organizer, 'String');
+      }
     }
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
     $dao->fetch();
     return $dao->count;
   }
   
-  function getAttended($organizer = NULL) {
+  function getAttended($organizer = FALSE) {
     $params = array();
     $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE ";
     $sql .= "status_id = 2";
-    if($organizer) {
-      $sql .= " AND organizer = %0";
-      $params[0] = array($organizer, 'String');
+    if($organizer !== FALSE) {
+      if(empty($organizer)) {
+        $sql .= " AND (organizer IS NULL OR organizer = '')";
+      }
+      else {
+        $sql .= " AND organizer = %0";
+        $params[0] = array($organizer, 'String');
+      }
     }
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
     $dao->fetch();
     return $dao->count;
   }
 
-  function getRemindersTotal($answer, $organizer = NULL) {
+  function getRemindersTotal($answer, $organizer = FALSE) {
     $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE 
       reminder_response = %0";
     $params = array(0 => array($answer, 'String'));
-    if($organizer) {
-      $sql .= " AND organizer = %1";
-      $params[1] = array($organizer, 'String');
+    if($organizer !== FALSE) {
+      if(empty($organizer)) {
+        $sql .= " AND (organizer IS NULL OR organizer = '')";
+      }
+      else {
+        $sql .= " AND organizer = %1";
+         $params[1] = array($organizer, 'String');
+      }
     }
+    
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
     $dao->fetch();
     return $dao->count;
@@ -355,8 +388,20 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       $attended_total = $this->getAttended($organizer); 
       $percent_attended = empty($reminders_yes) ? '0%' : number_format($attended_total / $reminders_yes, 2) * 100 . '%'; 
 
+      $organizer_label = NULL;
+      if(!empty($organizer_friendly)) {
+        $organizer_label = $organizer_friendly;
+      }
+      else{
+        if(!empty($organizer)) {
+          $organizer_label = $organizer;
+        }
+        else {
+          $organizer_label = '[organizer not set]';
+        }
+      }
       $resp[] = array(
-        $organizer_friendly, $universe_count, $calls_count, $contacted_count, $days_count,
+        $organizer_label, $universe_count, $calls_count, $contacted_count, $days_count,
         $calls_per_day, $contacted_per_day, "${calculated_yes} (${percent_yes})",
         "${calculated_maybe} (${percent_maybe})", "$calculated_no (${percent_no})",
         "${reminders_yes} (${percent_reminders_yes})", "${reminders_maybe} (${percent_reminders_maybe})",
@@ -375,7 +420,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       );
       reset($this->organizers);
       $resp[$day]['organizers'] = array();
-      while(list($organizer, $organizer_label) = each($this->organizers)) {
+      while(list($organizer, $organizer_friendly) = each($this->organizers)) {
         $universe = $this->getUniverseCount($organizer);
         $calls = $this->getCallsCount($organizer, $day);
         $contacts = $this->getCallsCount($organizer, $day, TRUE);
@@ -387,6 +432,19 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
         $reminders_maybe = $this->getRemindersTotal('Maybe', $organizer, $day);
         $no = $this->getCalculatedTotal('N', $organizer, $day);
         $reminders_no = $this->getRemindersTotal('No', $organizer, $day);
+
+        $organizer_label = NULL;
+        if(!empty($organizer_friendly)) {
+          $organizer_label = $organizer_friendly;
+        }
+        else{
+          if(!empty($organizer)) {
+            $organizer_label = $organizer;
+          }
+          else {
+            $organizer_label = '[organizer not set]';
+          }
+        }
 
         $resp[$day]['organizers'][$organizer] = array($organizer_label, $universe, $calls, $contacts,
           "${yes} (${reminders_yes})", "${maybe} (${reminders_maybe})", "${no} (${reminders_no})");
