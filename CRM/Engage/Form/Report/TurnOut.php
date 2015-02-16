@@ -64,14 +64,15 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
 
   function getEvents() {
 
-    $sql = "SELECT DISTINCT ce.id, title FROM civicrm_event ce JOIN civicrm_participant cp 
+    $sql = "SELECT DISTINCT ce.id, title, start_date FROM civicrm_event ce JOIN civicrm_participant cp 
       ON cp.event_id = ce.id JOIN `" . $this->table . "` pi ON cp.id = pi.entity_id 
       ORDER BY title";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $ret = array();
     while($dao->fetch()) {
+      $start = substr($dao->start_date, 0, 10);
       $id = $dao->id;
-      $ret[$id] = $dao->title;
+      $ret[$id] = $dao->title . " ($start)" ;
     }
     return $ret;
 
