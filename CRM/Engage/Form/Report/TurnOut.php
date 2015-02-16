@@ -21,6 +21,31 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       CRM_Core_Error::fatal("You must have civicrm_engage Drupal module enabled to use this Report.");
     }
 
+    // Initialize our table name and column names. Some installs will have different values.
+    $sql = "SELECT id, table_name FROM civicrm_custom_group WHERE name =
+      'Participant_Info' OR table_name like 'civicrm_value_participant_info%'";
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    $dao->fetch();
+    if($dao->id) {
+      $this->table = $dao->table_name;
+      // Now get our field names
+      $sql = "SELECT column_name, name FROM civicrm_custom_field WHERE
+        custom_group_id = %0";
+      $params = array(0 => array($dao->id, 'Integer'));
+      $column_dao = CRM_Core_DAO::executeQuery($sql, $params);
+      $fields = array('invitation_date', 'invitation_response',
+        'second_call_date', 'second_call_response', 'reminder_date',
+        'reminder_response');
+      while($column_dao->fetch()) {
+        reset($fields);
+        while(list(,$field) = each($fields)) {
+          if(strtolower($column_dao->name) == $field) {
+            $this->$field = $column_dao->column_name;
+          }
+        }
+      }
+    }
+
     $this->_columns = array(
       'civicrm_event' => array(
         'dao' => 'CRM_Event_DAO_Event',
