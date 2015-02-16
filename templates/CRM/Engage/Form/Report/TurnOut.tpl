@@ -10,7 +10,7 @@
     <div><span class="reports-header">{ts}Calls per day{/ts}</span>: <span class="to-value">{$calls_per_day}</spam></div>
     <div><span class="reports-header">{ts}Total Contacted{/ts}</span>: <span class="to-value">{$contacted_count}</spam></div>
     <div><span class="reports-header">{ts}Contacted per day{/ts}</span>: <span class="to-value">{$contacted_per_day}</spam></div>
-    <div><span class="reports-header">{ts}Attended{/ts}</span>: <span class="to-value">{$total_attended}</spam></div>
+    <div><span class="reports-header">{ts}Attended{/ts}</span>: <span class="to-value">{$attended_total}</spam></div>
     <div><span class="reports-header">{ts}Attended percent{/ts}</span>: <span class="to-value">{$attended_percent}</spam></div>
   </div>
     <table class="to-summary-responses">
