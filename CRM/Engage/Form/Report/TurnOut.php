@@ -269,7 +269,6 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
       }
       else {
         $sql .= " AND organizer = %1";
-        $params[0] = array($organizer, 'String');
       }
     }
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
