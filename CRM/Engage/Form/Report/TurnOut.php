@@ -174,7 +174,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
     $fields = array('invitation_date', 'second_call_date', 'reminder_date');
     $dates = array();
     while(list(,$field) = each($fields)) {
-      $sql = "SELECT DISTINCT `$field` AS date FROM `" . $this->data_table . "` WHERE `$field` IS NOT NULL";
+      $sql = "SELECT DISTINCT `$field` AS date FROM `" . $this->data_table . "` WHERE `$field` IS NOT NULL ORDER BY date";
       $params = array();
       if($organizer !== FALSE) {
         if(empty($organizer)) {
