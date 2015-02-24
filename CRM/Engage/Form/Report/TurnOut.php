@@ -10,6 +10,11 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
   private $reminder_response = 'reminder_response';
   private $event_ids = array();
   private $oranizers = array();
+  // We're not using typical Report fields - so tell the parent class
+  // so we get the $_params variable set properly - which is required
+  // for saving report instances (CRM_Report_Form::beginPostProcess -
+  // CRM-8532).
+  public $_noFields = TRUE;
 
   // Temp table for keeping results.
   private $data_table = NULL;
@@ -454,8 +459,8 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
 
   function postProcess() {
     parent::postProcess();
-    if(array_key_exists('event_ids_value', $_POST)) {
-      $this->event_ids = $_POST['event_ids_value'];
+    if(array_key_exists('event_ids_value', $this->_params)) {
+      $this->event_ids = $this->_params['event_ids_value'];
     }
     $template = CRM_Core_Smarty::singleton();
     if(count($this->event_ids) == 0) {
