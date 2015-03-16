@@ -1,6 +1,6 @@
 <?php
 
-class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
+class CRM_Engage_Form_Report_TurnOut extends CRM_Engage_Form_Report_TurnOutShared {
   function __construct() {
     // Make sure civicrm_engage Drupal module is enabled, otherwise
     // non of this will work.
