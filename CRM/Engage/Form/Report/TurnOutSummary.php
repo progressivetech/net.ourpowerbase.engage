@@ -1,0 +1,146 @@
+<?php
+
+class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnOutShared {
+  function __construct() {
+    $this->_columns = array(
+      'civicrm_event' => array(
+        'dao' => 'CRM_Event_DAO_Event',
+        'filters' => array(
+          'event_start_date' => array(
+            'title' => ts('Date Range'),
+            'type' => CRM_Utils_Type::T_DATE,
+            'operatorType' => CRM_Report_Form::OP_DATE,
+          ),
+        ),
+      ),
+     );
+    parent::__construct();
+  }
+
+  function preProcess() {
+    $this->assign('reportTitle', ts('Event Turnout Summary Report'));
+    parent::preProcess();
+  }
+
+  function setEventIds() {
+    $fieldName = 'event_start_date';
+    list($from, $to) = $this->getFromTo(
+      CRM_Utils_Array::value("{$fieldName}_relative", $this->_params),
+      CRM_Utils_Array::value("{$fieldName}_from", $this->_params),
+      CRM_Utils_Array::value("{$fieldName}_to", $this->_params)
+    );
+    // Find events in this date range.
+    $sql = 'SELECT id FROM civicrm_event WHERE start_date > %0 AND start_date < %1';
+    $params = array(
+      0 => array($from, 'Timestamp'),
+      1 => array($to, 'Timestamp'),
+    );
+    $dao = CRM_Core_DAO::executeQuery($sql, $params);
+    while($dao->fetch()) {
+      $this->event_ids[] = $dao->id;
+    }
+  }
+
+  function postProcess() {
+    parent::postProcess();
+    $this->setEventIds(); 
+    $template = CRM_Core_Smarty::singleton();
+    if(count($this->event_ids) == 0) {
+      $template->assign('to_message', ts("No events were chosen."));
+      return;
+    }
+    $this->populateDataTable();
+    if($this->getUniverseCount() == 0) {
+      $template->assign('to_message', ts("No turn out data is entered for this date range."));
+      return;
+    }
+    $this->setOrganizers();
+    $this->setConstituentTypes();
+    $this->setQuarterlySummary($template);
+  }
+
+  /**
+   * Return count of all contacts assigned to organizer with this ct
+   */
+  function getTotalUniverseCount($organizer, $constituent_type) {
+    $sql = "SELECT COUNT(*) AS count FROM civicrm_contact c JOIN `" .
+      $this->constituent_table .  "` ci ON c.id = ci.entity_id " .
+      "WHERE `" . $this->staff_responsible . "` = %0 AND `" . $this->constituent_type .
+      "` = %1 AND is_deleted = 0";
+
+    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+    $dao = CRM_Core_DAO::executeQuery($sql, $params);
+    $dao->fetch();
+    return $dao->count;
+  }
+
+  function getEventsCount($organizer, $constituent_type) {
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
+      "organizer = %0 AND constituent_type = %1";
+    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+    $dao = CRM_Core_DAO::executeQuery($sql, $params);
+    $dao->fetch();
+    return $dao->count;
+  }
+  
+  function getYesCount($organizer, $constituent_type) {
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
+      "organizer = %0 AND constituent_type = %1 AND reminder_response LIKE 'y%'";
+    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+    $dao = CRM_Core_DAO::executeQuery($sql, $params);
+    $dao->fetch();
+    return $dao->count;
+  }
+
+  function getAttendedCount($organizer, $constituent_type) {
+    // Status_id 2 is attended
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
+      "organizer = %0 AND constituent_type = %1 AND status_id = 2";
+    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+    $dao = CRM_Core_DAO::executeQuery($sql, $params);
+    $dao->fetch();
+    return $dao->count;
+  }
+
+  function getWantedConstituentTypes() {
+    return array('L', 'B', 'A1', 'A2', 'New', 'Lead');
+  }
+
+  function setQuarterlySummary(&$template) {
+    $data = array();
+    while(list($organizer, $organizer_friendly) = each($this->organizers)) {
+      if(empty($organizer)) continue;
+      $data[$organizer_friendly] = array();
+      reset($this->constituent_types);
+      while(list($constituent_type) = each($this->constituent_types)) {
+        if(empty($constituent_type)) continue;
+        $universe = $this->getTotalUniverseCount($organizer, $constituent_type);
+        $events = $this->getEventsCount($organizer, $constituent_type);
+        $yes = $this->getYesCount($organizer, $constituent_type);
+        $attended = $this->getAttendedCount($organizer, $constituent_type);
+
+        $total = $events + $yes + $attended;
+        if($total == 0) {
+          continue;
+        }
+
+        if($universe == 0) continue;
+        $events_percent = number_format($events / $universe * 100, 0);
+        $yes_percent = number_format($yes / $universe * 100, 0);
+        $attended_percent = number_format($attended / $universe * 100, 0);
+
+        $data[$organizer_friendly][$constituent_type] = array();
+        $data[$organizer_friendly][$constituent_type]['universe'] = $universe;
+        $data[$organizer_friendly][$constituent_type]['events'] = "$events (${events_percent}%)";
+        $data[$organizer_friendly][$constituent_type]['yes'] = "$yes (${yes_percent}%)";
+        $data[$organizer_friendly][$constituent_type]['attended'] = "$attended (${attended_percent}%)";
+      }
+      if(count($data[$organizer_friendly]) == 0) {
+        unset($data[$organizer_friendly]);
+      }
+    }
+    $template->assign('to_results', TRUE);
+    $template->assign('data', $data);
+  }
+
+}

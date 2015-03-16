@@ -1,24 +1,6 @@
 <?php
 
 class CRM_Engage_Form_Report_TurnOut extends CRM_Report_Form {
-  private $table = 'civicrm_value_participant_info';
-  private $invitation_date = 'invitation_date';
-  private $invitation_response = 'invitation_response';
-  private $second_call_date = 'second_call_date';
-  private $second_call_response = 'second_call_response';
-  private $reminder_date = 'reminder_date';
-  private $reminder_response = 'reminder_response';
-  private $event_ids = array();
-  private $oranizers = array();
-  // We're not using typical Report fields - so tell the parent class
-  // so we get the $_params variable set properly - which is required
-  // for saving report instances (CRM_Report_Form::beginPostProcess -
-  // CRM-8532).
-  public $_noFields = TRUE;
-
-  // Temp table for keeping results.
-  private $data_table = NULL;
-
   function __construct() {
     // Make sure civicrm_engage Drupal module is enabled, otherwise
     // non of this will work.
