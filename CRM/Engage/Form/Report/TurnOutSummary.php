@@ -1,5 +1,8 @@
 <?php
 
+// Define a shorter constant for easier code reading.
+define('SEP', CRM_Core_DAO::VALUE_SEPARATOR);
+
 class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnOutShared {
   function __construct() {
     $this->_columns = array(
@@ -66,9 +69,12 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
     $sql = "SELECT COUNT(*) AS count FROM civicrm_contact c JOIN `" .
       $this->constituent_table .  "` ci ON c.id = ci.entity_id " .
       "WHERE `" . $this->staff_responsible . "` = %0 AND `" . $this->constituent_type .
-      "` = %1 AND is_deleted = 0";
+      "` LIKE %1 AND is_deleted = 0";
 
-    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+    $params = array(
+      0 => array($organizer, 'String'), 
+      1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
+    );
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     return $dao->count;
@@ -76,8 +82,11 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
 
   function getEventsCount($organizer, $constituent_type) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
-      "organizer = %0 AND constituent_type = %1";
-    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+      "organizer = %0 AND constituent_type LIKE %1";
+    $params = array(
+      0 => array($organizer, 'String'), 
+      1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
+    );
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     return $dao->count;
@@ -85,8 +94,11 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
   
   function getYesCount($organizer, $constituent_type) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
-      "organizer = %0 AND constituent_type = %1 AND reminder_response LIKE 'y%'";
-    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+      "organizer = %0 AND constituent_type LIKE %1 AND reminder_response LIKE 'y%'";
+    $params = array(
+      0 => array($organizer, 'String'), 
+      1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
+    );
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     return $dao->count;
@@ -95,25 +107,32 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
   function getAttendedCount($organizer, $constituent_type) {
     // Status_id 2 is attended
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
-      "organizer = %0 AND constituent_type = %1 AND status_id = 2";
-    $params = array(0 => array($organizer, 'String'), 1 => array($constituent_type, 'String'));
+      "organizer = %0 AND constituent_type LIKE %1 AND status_id = 2";
+    $params = array(
+      0 => array($organizer, 'String'), 
+      1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
+    );
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     return $dao->count;
   }
 
-  function getWantedConstituentTypes() {
-    return array('L', 'B', 'A1', 'A2', 'New', 'Lead');
+  static function getWantedConstituentTypes() {
+    return array('B', 'A1', 'A2', 'New', 'Lead 1', 'L');
   }
 
   function setQuarterlySummary(&$template) {
     $data = array();
+    $wanted_constituent_types = $this->getWantedConstituentTypes();
     while(list($organizer, $organizer_friendly) = each($this->organizers)) {
       if(empty($organizer)) continue;
       $data[$organizer_friendly] = array();
       reset($this->constituent_types);
-      while(list($constituent_type) = each($this->constituent_types)) {
+      while(list(,$constituent_type) = each($this->constituent_types)) {
         if(empty($constituent_type)) continue;
+        if(!in_array($constituent_type, $wanted_constituent_types)) {
+          continue;
+        }
         $universe = $this->getTotalUniverseCount($organizer, $constituent_type);
         $events = $this->getEventsCount($organizer, $constituent_type);
         $yes = $this->getYesCount($organizer, $constituent_type);

@@ -140,6 +140,16 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     $map = array();
+
+    $class_variable = NULL;
+    if($type == 'staff_responsible') {
+      $class_variable = 'organizers';
+      $field_name = 'organizer';
+    }
+    elseif($type == 'constituent_type') {
+      $class_variable = 'constituent_types';
+      $field_name = 'constituent_type';
+    }
     if(!empty($dao->id)) {
       $params = array('field' => 'custom_' . $dao->id);
       $result = civicrm_api3('CustomField', 'getoptions', $params);
@@ -150,39 +160,38 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
         }
       }
     }
-    $sql = "SELECT DISTINCT `$type` FROM `" . $this->data_table . "` ORDER BY `$type`";
+    $sql = "SELECT DISTINCT `$field_name` FROM `" . $this->data_table . "` ORDER BY `$field_name`";
     $dao = CRM_Core_DAO::executeQuery($sql);
-    $class_variable = NULL;
-    if($type == 'organizer') {
-      $class_variable = 'organizers';
-    }
-    elseif($type == 'constituent_type') {
-      $class_variable = 'constituent_types';
-    }
 
     $this->$class_variable = array();
     while($dao->fetch()) {
-      if(empty($dao->$type)) {
+      if(empty($dao->$field_name)) {
         $key = '';
         $value = '[empty]';
       }
-      elseif(array_key_exists($dao->$type, $map)) {
-        $value = $map[$dao->$type];
-        $key = $dao->$type;
+      elseif(array_key_exists($dao->$field_name, $map)) {
+        $value = $map[$dao->$field_name];
+        $key = $dao->$field_name;
       }
       else {
-        $key = $value = $dao->$type;
+        $key = $value = $dao->$field_name;
       }
       $this->{$class_variable}[$key] = $value;
     }
   }
 
   function setOrganizers() {
-    $this->setClassVariable('organizer');
+    $this->setClassVariable('staff_responsible');
   }
 
   function setConstituentTypes() {
     $this->setClassVariable('constituent_type');
+    $trimmed = array();
+    while(list(,$type) = each($this->constituent_types)) {
+      $trimmed[] = trim($type, CRM_Core_DAO::VALUE_SEPARATOR);
+    }
+    // Reset without the invisible VALUE_SEPARATOR
+    $this->constituent_types = $trimmed;
   }
 
   // Note: $organizer might be null or empty
