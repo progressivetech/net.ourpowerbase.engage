@@ -80,10 +80,24 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
     return $dao->count;
   }
 
-  function getEventsCount($organizer, $constituent_type) {
+  /**
+   * Get number of people touched - called with a response.
+   */
+  function getTouchedCount($organizer, $constituent_type) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
-      "organizer = %0 AND constituent_type LIKE %1";
-    $params = array(
+      "organizer = %0 AND constituent_type LIKE %1 ";
+    $responses = $this->getContactedResponses();
+    $responses_fragment = array();
+    while(list(,$response) = each($responses)) {
+      $responses_fragment[] = '"' . CRM_Core_DAO::escapeString($response) . '"';
+    }
+    $responses_in = implode(',', $responses_fragment);
+    $sql .= "AND (
+      invitation_response IN ($responses_in) OR 
+      second_call_response IN ($responses_in) OR
+      reminder_response IN ($responses_in) 
+    )";
+   $params = array(
       0 => array($organizer, 'String'), 
       1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
     );
@@ -134,23 +148,23 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
           continue;
         }
         $universe = $this->getTotalUniverseCount($organizer, $constituent_type);
-        $events = $this->getEventsCount($organizer, $constituent_type);
+        $touched = $this->getTouchedCount($organizer, $constituent_type);
         $yes = $this->getYesCount($organizer, $constituent_type);
         $attended = $this->getAttendedCount($organizer, $constituent_type);
 
-        $total = $events + $yes + $attended;
+        $total = $touched + $yes + $attended;
         if($total == 0) {
           continue;
         }
 
         if($universe == 0) continue;
-        $events_percent = number_format($events / $universe * 100, 0);
+        $touched_percent = number_format($touched / $universe * 100, 0);
         $yes_percent = number_format($yes / $universe * 100, 0);
         $attended_percent = number_format($attended / $universe * 100, 0);
 
         $data[$organizer_friendly][$constituent_type] = array();
         $data[$organizer_friendly][$constituent_type]['universe'] = $universe;
-        $data[$organizer_friendly][$constituent_type]['events'] = "$events (${events_percent}%)";
+        $data[$organizer_friendly][$constituent_type]['touched'] = "$touched (${touched_percent}%)";
         $data[$organizer_friendly][$constituent_type]['yes'] = "$yes (${yes_percent}%)";
         $data[$organizer_friendly][$constituent_type]['attended'] = "$attended (${attended_percent}%)";
       }

@@ -8,7 +8,7 @@
         <tr>
           <th class="reports-header">Member Code</td>
           <th class="reports-header">Universe</td>
-          <th class="reports-header">Events</td>
+          <th class="reports-header">Touched</td>
           <th class="reports-header">Said Yes</td>
           <th class="reports-header">Attended</td>
         </tr>
