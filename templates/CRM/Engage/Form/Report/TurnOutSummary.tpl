@@ -9,7 +9,8 @@
           <th class="reports-header">Member Code</td>
           <th class="reports-header">Universe</td>
           <th class="reports-header">Touched</td>
-          <th class="reports-header">Said Yes</td>
+          <th class="reports-header">Yes (1st or 2nd call)</td>
+          <th class="reports-header">Yes (Reminder)</td>
           <th class="reports-header">Attended</td>
         </tr>
         {foreach from=$results  key=constituent_type item=rows}
