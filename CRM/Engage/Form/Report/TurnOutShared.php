@@ -1,5 +1,8 @@
 <?php
 
+// Define a shorter constant for easier code reading.
+define('SEP', CRM_Core_DAO::VALUE_SEPARATOR);
+
 class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
   protected $participant_table = 'civicrm_value_participant_info';
   protected $constituent_table = 'civicrm_value_constituent_info';
@@ -188,7 +191,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     $this->setClassVariable('constituent_type');
     $trimmed = array();
     while(list(,$type) = each($this->constituent_types)) {
-      $trimmed[] = trim($type, CRM_Core_DAO::VALUE_SEPARATOR);
+      $trimmed[] = trim($type, SEP);
     }
     // Reset without the invisible VALUE_SEPARATOR
     $this->constituent_types = $trimmed;
@@ -285,7 +288,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     return $count;
   }
 
-  function getCalculatedTotal($answer, $organizer = FALSE, $date = NULL) {
+  function getCalculatedTotal($answer, $organizer = FALSE, $date = NULL, $constituent_type = NULL) {
     $params = array(0 => array($answer, 'String'));
     if($organizer) {
       $params[1] = array($organizer, 'String');
@@ -293,11 +296,14 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     if($date) {
       $params[2] = array($date, 'String');
     }
+    if($constituent_type) {
+      $params[3] = array('%' . SEP . $constituent_type . SEP . '%' , 'String');
+    }
 
-    $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE ";
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "` WHERE ";
     $sql .= "(";
 
-    $sql .= "(second_call_response = '' AND invitation_response = %0";
+    $sql .= "((second_call_response = '' OR second_call_response IS NULL) AND invitation_response = %0";
     if($date) {
       $sql .= " AND invitation_date = %2";
     }
@@ -319,14 +325,18 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
         $sql .= " AND organizer = %1";
       }
     }
+    if($constituent_type) {
+      $sql .= " AND constituent_type LIKE %3";
+    }
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
+    
     $dao->fetch();
     return $dao->count;
   }
   
   function getAttended($organizer = FALSE) {
     $params = array();
-    $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE ";
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "` WHERE ";
     $sql .= "status_id = 2";
     if($organizer !== FALSE) {
       if(empty($organizer)) {
@@ -342,8 +352,8 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     return $dao->count;
   }
 
-  function getRemindersTotal($answer, $organizer = FALSE) {
-    $sql = "SELECT COUNT(*) AS count FROM `" . $this->data_table . "` WHERE 
+  function getRemindersTotal($answer, $organizer = FALSE, $constituent_type = NULL) {
+    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "` WHERE 
       reminder_response = %0";
     $params = array(0 => array($answer, 'String'));
     if($organizer !== FALSE) {
@@ -352,10 +362,13 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
       }
       else {
         $sql .= " AND organizer = %1";
-         $params[1] = array($organizer, 'String');
+        $params[1] = array($organizer, 'String');
       }
     }
-    
+    if($constituent_type) {
+      $params[2] = array('%' . SEP . $constituent_type . SEP . '%' , 'String');
+      $sql .= " AND constituent_type LIKE %2";
+    } 
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
     $dao->fetch();
     return $dao->count;

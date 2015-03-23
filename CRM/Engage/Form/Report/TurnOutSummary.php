@@ -1,8 +1,5 @@
 <?php
 
-// Define a shorter constant for easier code reading.
-define('SEP', CRM_Core_DAO::VALUE_SEPARATOR);
-
 class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnOutShared {
   function __construct() {
     $this->_columns = array(
@@ -106,18 +103,6 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
     return $dao->count;
   }
   
-  function getYesCount($organizer, $constituent_type) {
-    $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
-      "organizer = %0 AND constituent_type LIKE %1 AND reminder_response LIKE 'y%'";
-    $params = array(
-      0 => array($organizer, 'String'), 
-      1 => array('%' . SEP . $constituent_type . SEP . '%' , 'String')
-    );
-    $dao = CRM_Core_DAO::executeQuery($sql, $params);
-    $dao->fetch();
-    return $dao->count;
-  }
-
   function getAttendedCount($organizer, $constituent_type) {
     // Status_id 2 is attended
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `$this->data_table` WHERE ".
@@ -149,23 +134,26 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
         }
         $universe = $this->getTotalUniverseCount($organizer, $constituent_type);
         $touched = $this->getTouchedCount($organizer, $constituent_type);
-        $yes = $this->getYesCount($organizer, $constituent_type);
+        $reminder_yes = $this->getRemindersTotal('Y', $organizer, $constituent_type);
+        $call_yes = $this->getCalculatedTotal('Y', $organizer, NULL, $constituent_type);
         $attended = $this->getAttendedCount($organizer, $constituent_type);
 
-        $total = $touched + $yes + $attended;
+        $total = $touched + $reminder_yes + $call_yes + $attended;
         if($total == 0) {
           continue;
         }
 
         if($universe == 0) continue;
         $touched_percent = number_format($touched / $universe * 100, 0);
-        $yes_percent = number_format($yes / $universe * 100, 0);
+        $reminder_yes_percent = number_format($reminder_yes / $universe * 100, 0);
+        $call_yes_percent = number_format($call_yes / $universe * 100, 0);
         $attended_percent = number_format($attended / $universe * 100, 0);
 
         $data[$organizer_friendly][$constituent_type] = array();
         $data[$organizer_friendly][$constituent_type]['universe'] = $universe;
         $data[$organizer_friendly][$constituent_type]['touched'] = "$touched (${touched_percent}%)";
-        $data[$organizer_friendly][$constituent_type]['yes'] = "$yes (${yes_percent}%)";
+        $data[$organizer_friendly][$constituent_type]['call_yes'] = "$call_yes (${call_yes_percent}%)";
+        $data[$organizer_friendly][$constituent_type]['reminder_yes'] = "$reminder_yes (${reminder_yes_percent}%)";
         $data[$organizer_friendly][$constituent_type]['attended'] = "$attended (${attended_percent}%)";
       }
       if(count($data[$organizer_friendly]) == 0) {
