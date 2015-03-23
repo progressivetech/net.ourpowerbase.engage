@@ -276,6 +276,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
         }
         $sql .= " AND `$response_field` IN (" . implode(',', $responses_fragment) . ')';
       }
+      
       $dao = CRM_Core_DAO::executeQuery($sql, $params);
       while($dao->fetch()) {
         $count += $dao->count;
