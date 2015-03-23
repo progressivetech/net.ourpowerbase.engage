@@ -352,7 +352,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     return $dao->count;
   }
 
-  function getRemindersTotal($answer, $organizer = FALSE, $constituent_type = NULL) {
+  function getRemindersTotal($answer, $organizer = FALSE, $day = NULL, $constituent_type = NULL) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "` WHERE 
       reminder_response = %0";
     $params = array(0 => array($answer, 'String'));
@@ -369,6 +369,10 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
       $params[2] = array('%' . SEP . $constituent_type . SEP . '%' , 'String');
       $sql .= " AND constituent_type LIKE %2";
     } 
+    if($date) {
+      $params[3] = array($date, 'String');
+      $sql .= " AND reminder_date = %3";
+    }
     $dao = CRM_Core_DAO::executeQuery($sql,$params);
     $dao->fetch();
     return $dao->count;

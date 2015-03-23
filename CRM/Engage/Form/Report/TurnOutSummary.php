@@ -134,12 +134,13 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
         }
         $universe = $this->getTotalUniverseCount($organizer, $constituent_type);
         $touched = $this->getTouchedCount($organizer, $constituent_type);
-        $reminder_yes = $this->getRemindersTotal('Y', $organizer, $constituent_type);
+        $reminder_yes = $this->getRemindersTotal('Y', $organizer, NULL, $constituent_type);
         $call_yes = $this->getCalculatedTotal('Y', $organizer, NULL, $constituent_type);
         $attended = $this->getAttendedCount($organizer, $constituent_type);
 
         $total = $touched + $reminder_yes + $call_yes + $attended;
-        if($total == 0) {
+        //if($total == 0) {
+        if($universe == 0) {
           continue;
         }
 
