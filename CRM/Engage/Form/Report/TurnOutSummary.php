@@ -138,12 +138,6 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
         $call_yes = $this->getCalculatedTotal('Y', $organizer, NULL, $constituent_type);
         $attended = $this->getAttendedCount($organizer, $constituent_type);
 
-        $total = $touched + $reminder_yes + $call_yes + $attended;
-        //if($total == 0) {
-        if($universe == 0) {
-          continue;
-        }
-
         if($universe == 0) continue;
         $touched_percent = number_format($touched / $universe * 100, 0);
         $reminder_yes_percent = number_format($reminder_yes / $universe * 100, 0);

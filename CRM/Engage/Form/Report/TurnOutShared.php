@@ -352,7 +352,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
     return $dao->count;
   }
 
-  function getRemindersTotal($answer, $organizer = FALSE, $day = NULL, $constituent_type = NULL) {
+  function getRemindersTotal($answer, $organizer = FALSE, $date = NULL, $constituent_type = NULL) {
     $sql = "SELECT COUNT(DISTINCT contact_id) AS count FROM `" . $this->data_table . "` WHERE 
       reminder_response = %0";
     $params = array(0 => array($answer, 'String'));
