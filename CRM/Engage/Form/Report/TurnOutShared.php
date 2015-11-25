@@ -43,7 +43,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
       'Participant_Info' OR table_name like 'civicrm_value_participant_info%'";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $dao->fetch();
-    if($dao->id) {
+    if (isset($dao->id)) {
       $this->participant_table = $dao->table_name;
       // Now get our field names
       $sql = "SELECT column_name, name FROM civicrm_custom_field WHERE
@@ -68,7 +68,7 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
       'Constituent_Info_Individuals%' OR table_name like 'civicrm_value_constituent_info%'";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $dao->fetch();
-    if($dao->id) {
+    if (isset($dao->id)) {
       $this->constituent_table = $dao->table_name;
       // Now get our field names
       $sql = "SELECT column_name, name FROM civicrm_custom_field WHERE

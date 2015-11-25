@@ -183,7 +183,7 @@ class CRM_Engage_Form_Report_TurnOut extends CRM_Engage_Form_Report_TurnOutShare
     }
     $this->populateDataTable();
     if($this->getUniverseCount() == 0) {
-      $template->assign('to_message', ts("No turn our data is entered."));
+      $template->assign('to_message', ts("No turn out data is entered."));
       return;
     }
 
