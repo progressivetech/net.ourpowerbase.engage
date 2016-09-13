@@ -15,7 +15,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
   function __construct(&$formValues) {
     parent::__construct($formValues);
     // Override columns
-    $this->_columns = array( 
+    $this->_columns = array(
       ts('Contact ID') => 'contact_id',
       ts('Name') => 'sort_name',
       ts('Phone') => 'phone',
@@ -28,30 +28,38 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     parent::buildForm($form);
     $this->setTitle('Measure engagement (activities) by date');
 
+    if(CRM_Core_Permission::check("access all cases and activities")) {
+      $all = TRUE;
+      $include_cases = TRUE;
+      $activity_types = CRM_Core_PseudoConstant::activityType($all, $include_cases);
+    }
+    else {
+      $activity_types = CRM_Core_PseudoConstant::activityType($all);
+    }
     //Advanced Multiselect for Activity Types
     $form->add(
-      'advmultiselect', 
-      'activity_type_id', 
-      ts('Activity Type'), 
-      CRM_Core_PseudoConstant::activityType( ), 
+      'advmultiselect',
+      'activity_type_id',
+      ts('Activity Type'),
+      $activity_types,
       false,
       array('size'  => 10,
         'style' => 'width:220px',
         'class' => 'advmultiselect'
-      ) 
+      )
     );
     //Advanced Multiselect for Activity Statuses
     $form->add(
-      'advmultiselect', 
-      'activity_status_id', 
-      ts('Activity Status'), 
+      'advmultiselect',
+      'activity_status_id',
+      ts('Activity Status'),
       CRM_Core_PseudoConstant::activityStatus( ),
       false,
       array(
         'size' => 10,
         'style' => 'width:220px',
         'class' => 'advmultiselect'
-      ) 
+      )
     );
 
     $all_campaigns = CRM_Campaign_BAO_Campaign::getPermissionedCampaigns( NULL, NULL, FALSE, FALSE);
@@ -74,10 +82,10 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     }
 
     $form->add(
-      'advmultiselect', 
-      'activity_campaign_id',  
-      ts('Campaigns'), 
-      $options, 
+      'advmultiselect',
+      'activity_campaign_id',
+      ts('Campaigns'),
+      $options,
       FALSE,
       array(
         'size' => 10,
@@ -85,63 +93,63 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
         'class' => 'advmultiselect',
       )
     );
-    $form->add ('text', 
-      'minimum_activity_count', 
+    $form->add ('text',
+      'minimum_activity_count',
       ts('Minimum Activity Count')
     );
 
-    $form->addRule ('minimum_activity_count', 
-      ts('Postive Integers Only'), 
+    $form->addRule ('minimum_activity_count',
+      ts('Postive Integers Only'),
       'positiveInteger'
     );
 
-    $form->add ('text', 
-      'maximum_activity_count', 
+    $form->add ('text',
+      'maximum_activity_count',
       ts('Maximum Activity Count')
     );
 
-    $form->addRule ('maximum_activity_count', 
-      ts('Postive Integers Only'), 
+    $form->addRule ('maximum_activity_count',
+      ts('Postive Integers Only'),
       'positiveInteger'
     );
-    $form->add ('text', 
-      'minimum_engagement_level', 
+    $form->add ('text',
+      'minimum_engagement_level',
       ts('Minimum Engagement Level')
     );
 
-    $form->addRule ('minimum_engagement_level', 
-      ts('Postive Integers Only'), 
+    $form->addRule ('minimum_engagement_level',
+      ts('Postive Integers Only'),
       'positiveInteger'
     );
 
-    $form->add ('text', 
-      'maximum_engagement_level', 
+    $form->add ('text',
+      'maximum_engagement_level',
       ts('Maximum Engagement Level')
     );
 
-    $form->addRule ('maximum_engagement_level', 
-      ts('Postive Integers Only'), 
+    $form->addRule ('maximum_engagement_level',
+      ts('Postive Integers Only'),
       'positiveInteger'
     );
     //Text fields for Date Range
     //javascript handling of fields in template adds pop-up calendar
-    $form->addDate('activity_from_date', 
+    $form->addDate('activity_from_date',
       ts('Activities with date from...'),
-      false, 
-      array( 'formatType' => 'custom' ) 
+      false,
+      array( 'formatType' => 'custom' )
     );
 
-    $form->addDate('activity_to_date', 
+    $form->addDate('activity_to_date',
       ts('...through'),
-      false, 
-      array( 'formatType' => 'custom' ) 
+      false,
+      array( 'formatType' => 'custom' )
     );
 
     $options = $this->get_staff_responsible_options();
     if($options) {
       //Advanced Multiselect for Staff Responsible
-      $form->add  ('advmultiselect', 
-        'staff_responsible', 
+      $form->add  ('advmultiselect',
+        'staff_responsible',
         ts('Staff Responsible'),
         $options,
         false ,
@@ -153,8 +161,8 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     }
     $options = $this->get_constituent_type_options();
     if($options) {
-      $form->add  ('advmultiselect', 
-        'constituent_type', 
+      $form->add  ('advmultiselect',
+        'constituent_type',
         ts('Constituent Type'),
         $options,
         false ,
@@ -164,25 +172,25 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
         )
       );
     }
-    $form->add  ('advmultiselect', 
-      'participant_status_id', 
-      ts('Participant Status'), 
-      CRM_Event_PseudoConstant::participantStatus( ), 
-      false, 
+    $form->add  ('advmultiselect',
+      'participant_status_id',
+      ts('Participant Status'),
+      CRM_Event_PseudoConstant::participantStatus( ),
+      false,
       array('size'  => 10,
         'style' => 'width:220px',
         'class' => 'advmultiselect'
-      ) 
+      )
     );
 
     $base_search_elements = array('includeGroups', 'excludeGroups', 'andOr', 'includeTags', 'excludeTags');
     $our_elements = array(
-      'activity_type_id', 
-      'activity_status_id', 
-      'activity_campaign_id', 
-      'maximum_activity_count', 
-      'minimum_activity_count', 
-      'maximum_engagement_level', 
+      'activity_type_id',
+      'activity_status_id',
+      'activity_campaign_id',
+      'maximum_activity_count',
+      'minimum_activity_count',
+      'maximum_engagement_level',
       'minimum_engagement_level',
       'activity_from_date',
       'activity_to_date',
@@ -205,7 +213,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
       $table = $this->get_constituent_info_table_name();
       $from .= ' INNER JOIN ' . $table . ' ci ON contact_a.id = ci.entity_id';
     }
-    //Add table for participant status 
+    //Add table for participant status
     if (!empty($this->_formValues['participant_status_id'])) {
       $from .= ' INNER JOIN civicrm_participant cp ON contact_a.id = cp.contact_id ';
     }
@@ -255,7 +263,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
       $clauses[] = "activity.activity_date_time <= $activityToDateFormatted";
     }
     if (!empty($this->_formValues['staff_responsible'])) {
-      $staff_clauses = array(); 
+      $staff_clauses = array();
       foreach ($this->_formValues['staff_responsible'] as $value) {
         $field_name = $this->get_staff_responsible_field_name();
         $staff_clauses[] = "ci." . $field_name . " = '" . addslashes($value) . "'";
@@ -263,7 +271,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
       $clauses[] = '(' . implode(' OR ', $staff_clauses) . ')';
     }
     if (!empty($this->_formValues['constituent_type'])) {
-      $ct_clauses = array(); 
+      $ct_clauses = array();
       foreach ($this->_formValues['constituent_type'] as $value) {
         $field_name = $this->get_constituent_type_field_name();
         $ct_clauses[] = "ci." . $field_name . " = '" . addslashes($value) . "'";
@@ -290,11 +298,11 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
    *
    * Construct the search query
    *
-  **/       
+  **/
   function all( $offset = 0, $rowcount = 0, $sort = NULL, $includeContactIDs = FALSE, $onlyIDs = FALSE ) {
     // SELECT clause must include contact_id as an alias for civicrm_contact.id
     if ($onlyIDs) {
-      $select  = 'contact_a.id as contact_id'; 
+      $select  = 'contact_a.id as contact_id';
     } else {
       $select  = 'contact_a.id AS contact_id, contact_a.sort_name AS sort_name, COUNT(DISTINCT activity.id) '.
        'AS count, AVG(activity.engagement_level) AS engagement, GROUP_CONCAT(DISTINCT phone SEPARATOR ", ")  ';
@@ -344,24 +352,24 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
 
     if ($rowcount > 0 && $offset >= 0) {
       $sql .= " LIMIT $offset, $rowcount ";
-    }        
+    }
 
-    // Now shove everything into a temp table so our final query doesn't use a 
+    // Now shove everything into a temp table so our final query doesn't use a
     // GROUP statement which breaks things if you try to use this query to build
     // a smart group (the smart group code tries to tack on additional WHERE clauses
     // which break things if we have a HAVING or ORDER BY clause.
     if(!$onlyIDs) {
-      $this->_final_temp_table = 'civicrm_temp_custom_' . md5(uniqid()); 
-      $temp_sql = 'CREATE TEMPORARY TABLE ' . $this->_final_temp_table . 
+      $this->_final_temp_table = 'civicrm_temp_custom_' . md5(uniqid());
+      $temp_sql = 'CREATE TEMPORARY TABLE ' . $this->_final_temp_table .
         ' (contact_id int, sort_name varchar(128), count int, engagement decimal(3,2), phone varchar(255)) ENGINE=HEAP';
       CRM_Core_DAO::executeQuery($temp_sql);
       $insert_sql = "INSERT INTO " . $this->_final_temp_table . ' ' . $sql;
       CRM_Core_DAO::executeQuery($insert_sql);
       $sql = "SELECT * FROM " . $this->_final_temp_table;
     }
-    else { 
-      $this->_final_temp_table = 'civicrm_temp_custom_' . md5(uniqid()); 
-      $temp_sql = 'CREATE TEMPORARY TABLE ' . $this->_final_temp_table . 
+    else {
+      $this->_final_temp_table = 'civicrm_temp_custom_' . md5(uniqid());
+      $temp_sql = 'CREATE TEMPORARY TABLE ' . $this->_final_temp_table .
         ' (contact_id int) ENGINE=HEAP';
       CRM_Core_DAO::executeQuery($temp_sql);
       $insert_sql = "INSERT INTO " . $this->_final_temp_table . ' ' . $sql;
@@ -408,7 +416,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
       $this->_constituent_type_field_name = $dao->column_name;
     }
   }
-  
+
   function get_staff_responsible_options() {
     $this->set_constituent_info_values();
     return $this->_staff_responsible_options;
