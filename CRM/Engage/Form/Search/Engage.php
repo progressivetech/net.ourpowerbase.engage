@@ -34,7 +34,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
       $activity_types = CRM_Core_PseudoConstant::activityType($all, $include_cases);
     }
     else {
-      $activity_types = CRM_Core_PseudoConstant::activityType($all);
+      $activity_types = CRM_Core_PseudoConstant::activityType();
     }
     //Advanced Multiselect for Activity Types
     $form->add(
