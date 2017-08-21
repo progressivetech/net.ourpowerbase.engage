@@ -27,14 +27,17 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
   function buildForm(&$form) {
     parent::buildForm($form);
     $this->setTitle('Measure engagement (activities) by date');
-
+    $all = TRUE;
+    $include_cases = FALSE;
+    $reset = FALSE;
+    $returnColumn = 'label';
+    $includeCampaignActivities = TRUE;
     if(CRM_Core_Permission::check("access all cases and activities")) {
-      $all = TRUE;
       $include_cases = TRUE;
-      $activity_types = CRM_Core_PseudoConstant::activityType($all, $include_cases);
+      $activity_types = CRM_Core_PseudoConstant::activityType($all, $include_cases, $reset, $returnColumn, $includeCampaignActivities);
     }
     else {
-      $activity_types = CRM_Core_PseudoConstant::activityType();
+      $activity_types = CRM_Core_PseudoConstant::activityType($all, $include_cases, $reset, $returnColumn, $includeCampaignActivities);
     }
     //Advanced Multiselect for Activity Types
     $form->add(
