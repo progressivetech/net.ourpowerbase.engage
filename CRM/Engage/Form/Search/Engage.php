@@ -305,7 +305,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
   function all( $offset = 0, $rowcount = 0, $sort = NULL, $includeContactIDs = FALSE, $onlyIDs = FALSE ) {
     // SELECT clause must include contact_id as an alias for civicrm_contact.id
     if ($onlyIDs) {
-      $select  = 'contact_a.id as contact_id';
+      $select  = 'contact_a.id as contact_id, contact_a.id as id';
     } else {
       $select  = 'contact_a.id AS contact_id, contact_a.sort_name AS sort_name, COUNT(DISTINCT activity.id) '.
        'AS count, AVG(activity.engagement_level) AS engagement, GROUP_CONCAT(DISTINCT phone SEPARATOR ", ")  ';
@@ -319,10 +319,19 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
 
     $sql = "SELECT $select $from $where GROUP BY contact_id ";
 
-    $cnt_min = $this->_formValues['minimum_activity_count'];
-    $cnt_max = $this->_formValues['maximum_activity_count'];
-    $level_min = $this->_formValues['minimum_engagement_level'];
-    $level_max = $this->_formValues['maximum_engagement_level'];
+    $cnt_min = $cnt_max = $level_max = $level_min = NULL;
+    if (array_key_exists('minimum_activity_count', $this->_formValues)) {
+      $cnt_min = $this->_formValues['minimum_activity_count'];
+    }
+    if (array_key_exists('maximum_activity_count', $this->_formValues)) {
+      $cnt_max = $this->_formValues['maximum_activity_count'];
+    }
+    if (array_key_exists('maximum_engagement_level', $this->_formValues)) {
+      $level_max = $this->_formValues['maximum_engagement_level'];
+    }
+    if (array_key_exists('minimum_engagement_level', $this->_formValues)) {
+      $level_min = $this->_formValues['minimum_engagement_level'];
+    }
 
     $having_clauses = array();
     if (!empty($cnt_min)) {
@@ -343,11 +352,13 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     // Define ORDER BY for query in $sort, with default value
     if (empty($justIDs)) {
       if (!empty( $sort)) {
-        if (is_string($sort)) {
-          $sql .= " ORDER BY $sort ";
-        } else {
-          $sql .= " ORDER BY " . trim( $sort->orderBy() );
+        if (!is_string($sort)) {
+          $sort = trim($sort->orderBy());
         }
+        if ($sort == 'id') {
+          $sort = 'contact_a.id';
+        }
+        $sql .= " ORDER BY " . $sort;
       } else {
         $sql .= " ORDER BY contact_a.last_name ASC";
       }
@@ -373,13 +384,12 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     else {
       $this->_final_temp_table = 'civicrm_temp_custom_' . md5(uniqid());
       $temp_sql = 'CREATE TEMPORARY TABLE ' . $this->_final_temp_table .
-        ' (contact_id int) ENGINE=HEAP';
+        ' (contact_id int, id int) ENGINE=HEAP';
       CRM_Core_DAO::executeQuery($temp_sql);
       $insert_sql = "INSERT INTO " . $this->_final_temp_table . ' ' . $sql;
       CRM_Core_DAO::executeQuery($insert_sql);
       $sql = "SELECT contact_id FROM " . $this->_final_temp_table . ' contact_a WHERE (1)';
     }
-
     return $sql;
   }
 
@@ -411,7 +421,7 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     }
 
     // Get constituent info table name.
-    $sql = "SELECT table_name FROM civicrm_custom_group WHERE name LIKE
+    $sql = "SELECT table_name FROM civicrm_custom_group WHERE name LIKE 
       '%constituent%' AND extends = 'Individual'";
     $dao = CRM_Core_DAO::executeQuery($sql);
     $dao->fetch();
@@ -454,4 +464,5 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     $this->set_constituent_info_values();
     return $this->_constituent_info_table_name;
   }
+  
 }
