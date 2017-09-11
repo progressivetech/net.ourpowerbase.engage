@@ -398,7 +398,8 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     // We only need to run once to collect all the information.
     if(!is_null($this->_staff_responsible_options)) return;
 
-    $sql = "SELECT og.name AS name, column_name, table_name FROM civicrm_custom_field cf ".
+    // Get staff responsible options (if any)
+    $sql = "SELECT og.name AS name, column_name FROM civicrm_custom_field cf ".
       "JOIN civicrm_option_group og ON og.id = cf.option_group_id ".
       "JOIN civicrm_custom_group cg ON cf.custom_group_id = cg.id ".
       "WHERE column_name LIKE 'staff_responsible%'";
@@ -407,8 +408,17 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     if($dao->N != 0) {
       $this->_staff_responsible_options = CRM_Core_OptionGroup::values($dao->name);
       $this->_staff_responsible_field_name = $dao->column_name;
+    }
+
+    // Get constituent info table name.
+    $sql = "SELECT table_name FROM civicrm_custom_group WHERE name LIKE
+      '%constituent%' AND extends = 'Individual'";
+    $dao = CRM_Core_DAO::executeQuery($sql);
+    $dao->fetch();
+    if($dao->N != 0) {
       $this->_constituent_info_table_name = $dao->table_name;
     }
+
     $sql = "SELECT og.name AS name, column_name FROM civicrm_custom_field cf ".
       "JOIN civicrm_option_group og ON og.id = cf.option_group_id ".
       "WHERE column_name LIKE 'constituent_type%'";
