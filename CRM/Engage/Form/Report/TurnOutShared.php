@@ -137,12 +137,17 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
    * param @type - String - either constituent_type or staff_responsible.
    */
   function setClassVariable($type) {
-    $sql = "SELECT id FROM civicrm_custom_field WHERE (name = %0 OR 
-      (name IS NULL AND column_name like %1)) AND is_active = 1 ";
+    $sql = "SELECT id, option_group_id, filter FROM civicrm_custom_field
+      WHERE (name = %0 OR (name IS NULL AND column_name like %1)) AND
+       is_active = 1 ";
     $params = array(0 => array($type, 'String'), 1 => array("${type}%", 'String'));
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
     $dao->fetch();
     $map = array();
+    $lookup_field = FALSE;
+    if (preg_match('/^action=lookup/', $dao->filter)) {
+      $lookup_field = TRUE;
+    }
 
     $class_variable = NULL;
     if($type == 'staff_responsible') {
@@ -153,14 +158,19 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
       $class_variable = 'constituent_types';
       $field_name = 'constituent_type';
     }
-    if(!empty($dao->id)) {
+    if(!empty($dao->option_group_id)) {
       $params = array('field' => 'custom_' . $dao->id);
-      $result = civicrm_api3('CustomField', 'getoptions', $params);
-      if(array_key_exists('values', $result)) {
-        reset($result['values']);
-        while(list($key, $value) = each($result['values'])) {
-          $map[$key] = $value;
+      try {
+        $result = civicrm_api3('CustomField', 'getoptions', $params);
+        if(array_key_exists('values', $result)) {
+          reset($result['values']);
+          while(list($key, $value) = each($result['values'])) {
+            $map[$key] = $value;
+          }
         }
+      }
+      catch (CiviCRM_API3_Exception $e) {
+        // No op. What should we do here? 
       }
     }
     $sql = "SELECT DISTINCT `$field_name` FROM `" . $this->data_table . "` ORDER BY `$field_name`";
@@ -176,7 +186,14 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
         $value = $map[$dao->$field_name];
         $key = $dao->$field_name;
       }
+      elseif ($lookup_field) {
+        // We should have a contact_id and need to replace with display_name.
+        $params = array('return' => 'display_name', 'id' => $dao->$field_name);
+        $value = civicrm_api3('Contact', 'getvalue', $params);
+        $key = $dao->$field_name;
+      }
       else {
+        dsm($dao->$field_name);
         $key = $value = $dao->$field_name;
       }
       $this->{$class_variable}[$key] = $value;
