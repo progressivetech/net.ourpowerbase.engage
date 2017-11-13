@@ -193,7 +193,6 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
         $key = $dao->$field_name;
       }
       else {
-        dsm($dao->$field_name);
         $key = $value = $dao->$field_name;
       }
       $this->{$class_variable}[$key] = $value;
