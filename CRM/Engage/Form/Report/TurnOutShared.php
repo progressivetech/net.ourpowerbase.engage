@@ -178,24 +178,27 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
 
     $this->$class_variable = array();
     while($dao->fetch()) {
-      if(empty($dao->$field_name)) {
-        $key = '';
-        $value = '[empty]';
+      $db_values = explode(SEP, $dao->$field_name);
+      foreach($db_values as $db_value) {
+        if(empty($db_value)) {
+          $key = '';
+          $value = '[empty]';
+        }
+        elseif(array_key_exists($db_value, $map)) {
+          $value = $map[$db_value];
+          $key = $db_value;
+        }
+        elseif ($lookup_field) {
+          // We should have a contact_id and need to replace with display_name.
+          $params = array('return' => 'display_name', 'id' => $db_value);
+          $value = civicrm_api3('Contact', 'getvalue', $params);
+          $key = $db_value;
+        }
+        else {
+          $key = $value = $db_value;
+        }
+        $this->{$class_variable}[$key] = $value;
       }
-      elseif(array_key_exists($dao->$field_name, $map)) {
-        $value = $map[$dao->$field_name];
-        $key = $dao->$field_name;
-      }
-      elseif ($lookup_field) {
-        // We should have a contact_id and need to replace with display_name.
-        $params = array('return' => 'display_name', 'id' => $dao->$field_name);
-        $value = civicrm_api3('Contact', 'getvalue', $params);
-        $key = $dao->$field_name;
-      }
-      else {
-        $key = $value = $dao->$field_name;
-      }
-      $this->{$class_variable}[$key] = $value;
     }
   }
 
@@ -205,12 +208,6 @@ class CRM_Engage_Form_Report_TurnOutShared extends CRM_Report_Form {
 
   function setConstituentTypes() {
     $this->setClassVariable('constituent_type');
-    $trimmed = array();
-    while(list(,$type) = each($this->constituent_types)) {
-      $trimmed[] = trim($type, SEP);
-    }
-    // Reset without the invisible VALUE_SEPARATOR
-    $this->constituent_types = $trimmed;
   }
 
   // Note: $organizer might be null or empty

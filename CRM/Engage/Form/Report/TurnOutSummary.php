@@ -117,7 +117,7 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
   }
 
   static function getWantedConstituentTypes() {
-    return array('B', 'A1', 'A2', 'New', 'Lead 1', 'L');
+    return array('B', 'A1', 'A2', 'New', 'Lead 1', 'Leader');
   }
 
   function setQuarterlySummary(&$template) {
@@ -127,7 +127,7 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
       if(empty($organizer)) continue;
       $data[$organizer_friendly] = array();
       reset($this->constituent_types);
-      while(list(,$constituent_type) = each($this->constituent_types)) {
+      while(list($constituent_type, $constituent_type_label) = each($this->constituent_types)) {
         if(empty($constituent_type)) continue;
         if(!in_array($constituent_type, $wanted_constituent_types)) {
           continue;
@@ -144,12 +144,12 @@ class CRM_Engage_Form_Report_TurnOutSummary extends CRM_Engage_Form_Report_TurnO
         $call_yes_percent = number_format($call_yes / $universe * 100, 0);
         $attended_percent = number_format($attended / $universe * 100, 0);
 
-        $data[$organizer_friendly][$constituent_type] = array();
-        $data[$organizer_friendly][$constituent_type]['universe'] = $universe;
-        $data[$organizer_friendly][$constituent_type]['touched'] = "$touched (${touched_percent}%)";
-        $data[$organizer_friendly][$constituent_type]['call_yes'] = "$call_yes (${call_yes_percent}%)";
-        $data[$organizer_friendly][$constituent_type]['reminder_yes'] = "$reminder_yes (${reminder_yes_percent}%)";
-        $data[$organizer_friendly][$constituent_type]['attended'] = "$attended (${attended_percent}%)";
+        $data[$organizer_friendly][$constituent_type_label] = array();
+        $data[$organizer_friendly][$constituent_type_label]['universe'] = $universe;
+        $data[$organizer_friendly][$constituent_type_label]['touched'] = "$touched (${touched_percent}%)";
+        $data[$organizer_friendly][$constituent_type_label]['call_yes'] = "$call_yes (${call_yes_percent}%)";
+        $data[$organizer_friendly][$constituent_type_label]['reminder_yes'] = "$reminder_yes (${reminder_yes_percent}%)";
+        $data[$organizer_friendly][$constituent_type_label]['attended'] = "$attended (${attended_percent}%)";
       }
       if(count($data[$organizer_friendly]) == 0) {
         unset($data[$organizer_friendly]);
