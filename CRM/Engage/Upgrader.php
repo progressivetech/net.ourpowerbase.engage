@@ -21,13 +21,8 @@ class CRM_Engage_Upgrader extends CRM_Engage_Upgrader_Base {
     $dao = CRM_Core_DAO::executeQuery($sql);
     $dao->fetch();
     if ($dao->id) {
-      // Update the name.
-      $dao->id;
-      $sql = "UPDATE civicrm_option_group SET name ='engage_survey_default_results_set_options' WHERE id = %0";
-      CRM_Core_DAO::executeQuery($sql, [ 0 => [ $dao->id, 'Integer' ] ]);
-
       // Now insert a record into civicrm_managed so the reconcile script doesn't try to do it.
-      $sql = "INSERT INTO civicrm_managed SET module = 'net.ourpowerbase.engage', name = 'engage_survey_default_results_set_options',
+      $sql = "INSERT INTO civicrm_managed SET module = 'net.ourpowerbase.engage', name = 'civicrm_survey_default_results_set_options',
         entity_type = 'OptionGroup', entity_id = %0";
       CRM_Core_DAO::executeQuery($sql, [ 0 => [ $dao->id, 'Integer' ] ]);
     }

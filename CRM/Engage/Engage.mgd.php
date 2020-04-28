@@ -4,11 +4,11 @@
 return array(
   0 => array(
     'entity' => 'OptionGroup',
-    'name' => 'engage_survey_default_results_set_options',
+    'name' => 'civicrm_survey_default_results_set_options',
     'update' => 'never',
     'params' => array (
       'version' => 3,
-      'name' => 'engage_survey_default_results_set_options',
+      'name' => 'civicrm_survey_default_results_set_options',
       'title' => 'Survey Default Results Set Options',
       'is_reserved' => '1',
       'is_active' => '1',
@@ -17,7 +17,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Completed',
-          'name' => 'engage_survey_results_completed',
+          'name' => 'civicrm_survey_results_completed',
           'value' => 'C',
           'is_default' => '0',
           'weight' => '10',
@@ -28,7 +28,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Not Home',
-          'name' => 'engage_survey_results_nothome',
+          'name' => 'civicrm_survey_results_nothome',
           'value' => 'NH',
           'is_default' => '0',
           'weight' => '20',
@@ -39,7 +39,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Moved',
-          'name' => 'engage_survey_results_moved',
+          'name' => 'civicrm_survey_results_moved',
           'value' => 'MV',
           'is_default' => '0',
           'weight' => '30',
@@ -50,7 +50,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Wrong Address',
-          'name' => 'engage_survey_results_wrongaddress',
+          'name' => 'civicrm_survey_results_wrongaddress',
           'value' => 'WA',
           'is_default' => '0',
           'weight' => '40',
@@ -61,7 +61,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Wrong Number',
-          'name' => 'engage_survey_results_wrongnumber',
+          'name' => 'civicrm_survey_results_wrongnumber',
           'value' => 'WN',
           'is_default' => '0',
           'weight' => '50',
@@ -72,7 +72,7 @@ return array(
         array(
           'option_group_id' => '$value.id',
           'label' => 'Deceased',
-          'name' => 'engage_survey_results_deceased',
+          'name' => 'civicrm_survey_results_deceased',
           'value' => 'DE',
           'is_default' => '0',
           'weight' => '60',
