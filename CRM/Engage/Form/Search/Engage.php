@@ -73,13 +73,13 @@ class CRM_Engage_Form_Search_Engage extends CRM_Contact_Form_Search_Custom_Group
     $options = array();
     if(!empty($current_campaigns)) {
       $options['current_campaign'] = ts('Current Campaigns');
-      while(list($id, $name) = each($current_campaigns)) {
+      foreach($current_campaigns as $id => $name) {
         $options[$id] = "&nbsp;&nbsp;&nbsp;$name";
       }
     }
     if(!empty($past_campaigns)) {
       $options['past_campaign'] = ts('Past Campaigns');
-      while(list($id, $name) = each($past_campaigns)) {
+      foreach($past_campaigns as $id => $name) {
         $options[$id] = "&nbsp;&nbsp;&nbsp;$name";
       }
     }
