@@ -4,7 +4,7 @@ use CRM_Engage_ExtensionUtil as E;
 /**
  * Collection of upgrade steps.
  */
-class CRM_Engage_Upgrader extends CRM_Engage_Upgrader_Base {
+class CRM_Engage_Upgrader extends CRM_Extension_Upgrader_Base {
 
   /**
    * Update existing sites which had a default survey option group
